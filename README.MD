@@ -1,0 +1,7 @@
+## Motivation: ##
+
+- Having studied Economics in undergrad, I've developed a keen interest in the intersection between economics and computer science, particularly in the realm of Game Theory. While there are many ways that Game Theory intersects with computer science, this project will focus on its application in the field of cybersecurity—or what is often referred to as the "Economics of Security."
+
+- As I delved into this  field, I found that a multitude of approaches have been employed to optimize resource allocation and attack-defense models, among other things in these Game Theoretic models. However, one growing area of research incorporates elements of deception and non-rational play into models. While these approaches have yielded promising results for defenders, they have also significantly increased the complexity of these game spaces. So much so, in fact, that traditional optimization methods may no longer be effective.
+
+- Therefore, my interest lies in exploring heuristic and probabilistic optimization methods in this complex landscape. Although I do not have a specific end goal in mind, my inspiration to investigate this area stems from reading in the Economics of Cybersecurity. I plan to track my work here. 
