@@ -2,18 +2,19 @@ import random
 import matplotlib.pyplot as plt
 
 class SecurityGame:
-    def __init__(self, num_targets, k_resources, file):
+    def __init__(self, num_targets, k_resources, file, steps):
         assert k_resources < num_targets, "k should be less than n"
         
         self.num_targets = num_targets
         self.k_resources = k_resources
         self.history = []  
-        self.belief_type1 = 0.5  
+        self.belief_type1 = 0.99  
         self.rewards = [random.uniform(1, 10) for _ in range(num_targets)]
         self.penalties = [random.uniform(-10, -1) for _ in range(num_targets)]
         self.file = file
         self.defender_utilities = []
         self.attacker_utilities = []
+        self.steps = steps
 
     
     def defender_strategy(self):
@@ -62,7 +63,7 @@ class SecurityGame:
     def run_single_instance(self, scenario, belief_type1):
         self.belief_type1 = belief_type1
         deceptive_actions = 0
-        for _ in range(2):  # Time step of 2
+        for _ in range(self.steps):  # Time step of 2
             # 1. Attacker chooses a target to attack
             target_attacked = self.simulate_attack(scenario)
             
@@ -77,38 +78,87 @@ class SecurityGame:
                 self.defender_utilities.append(self.rewards[target_attacked])
                 self.attacker_utilities.append(-self.rewards[target_attacked])
             else:
-                self.defender_utilities.append(self.penalties[target_attacked])
-                self.attacker_utilities.append(-self.penalties[target_attacked])
+                self.defender_utilities.append(-self.penalties[target_attacked])
+                self.attacker_utilities.append(self.penalties[target_attacked])
             
             if target_attacked not in defended_targets:
                 deceptive_actions += 1
-        return deceptive_actions / 2
+        return deceptive_actions / self.steps
 
 
     def run_experiment(self, scenario, belief_type1, instances=220):
         total_deceptive_actions = sum([self.run_single_instance(scenario, belief_type1) for _ in range(instances)])
-        return total_deceptive_actions / instances
+        return {"deceptive actions / instances" : total_deceptive_actions / instances, "defender utilites" : self.defender_utilities, "attacker utilities" : self.attacker_utilities}
 
 with open("output.txt", "w") as file:
     # Running the experiment
     target_options = [4, 6, 8, 10, 12]
+    attacker_results_per_scenario = {"Perfect Bayesian": [], "Myopic w/ Learn": [], "Deceptive w/ Learn": []}
+    defender_results_per_scenario = {"Perfect Bayesian": [], "Myopic w/ Learn": [], "Deceptive w/ Learn": []}
+
     k_resources_options = [1, 2, 3, 4, 5]  # Ensure k < n for each n in target_options
     prior_probs = [i/100 for i in range(0, 101, 5)]
     scenarios = ["Perfect Bayesian", "Myopic w/ Learn", "Deceptive w/ Learn"]
-
+    # 2 step game
     plt.figure(figsize=(15, 9))
     for n, k in zip(target_options, k_resources_options):
         avg_deceptive_actions_over_scenarios = []
         for p in prior_probs:
             avg_deceptive_actions_for_prior = []
             for scenario in scenarios:
-                avg_deceptive_actions_for_prior.append(SecurityGame(num_targets=n, k_resources=k, file=file).run_experiment(scenario, p))
+                game = SecurityGame(num_targets=n, k_resources=k, file=file, steps=2).run_experiment(scenario, p)
+                avg_deceptive_actions_for_prior.append(game.get("deceptive actions / instances"))
+                attacker_results_per_scenario[scenario].append(game.get("attacker utilities"))
+                defender_results_per_scenario[scenario].append(game.get("defender utilites"))
+
+
             avg_deceptive_actions_over_scenarios.append(sum(avg_deceptive_actions_for_prior) / len(scenarios))
         plt.plot(prior_probs, avg_deceptive_actions_over_scenarios, label=f'N={n}')
-
+    '''
     plt.title("Probability of Deceptive Action for T=2 Time Steps")
     plt.xlabel("Prior Probability of Attacker Type 1")
     plt.ylabel("Probability of Deceptive Action")
     plt.legend()
     plt.grid(True)
     plt.show()
+    #plot utilities for attacker and defene
+    plt.figure(figsize=(15, 9))
+    holder = []
+    for scenario in attacker_results_per_scenario.keys():
+        for result in attacker_results_per_scenario.get(scenario):
+            for val in result:
+                holder.append(val)
+        plt.plot(holder, label=scenario)
+        holder = []
+    '''
+
+
+    plt.title("Attacker Utilities for T=2 Time Steps")
+    plt.xlabel("Prior Probability of Attacker Type 1")
+    plt.ylabel("Attacker Utility")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+    #reset utilities
+    attacker_results_per_scenario = {"Perfect Bayesian": [], "Myopic w/ Learn": [], "Deceptive w/ Learn": []}
+    defender_results_per_scenario = {"Perfect Bayesian": [], "Myopic w/ Learn": [], "Deceptive w/ Learn": []}
+    # 3 step game
+    plt.figure(figsize=(15, 9))
+    for n, k in zip(target_options, k_resources_options):
+        avg_deceptive_actions_over_scenarios = []
+        for p in prior_probs:
+            avg_deceptive_actions_for_prior = []
+            for scenario in scenarios:
+                avg_deceptive_actions_for_prior.append(SecurityGame(num_targets=n, k_resources=k, file=file, steps=3).run_experiment(scenario, p).get("deceptive actions / instances"))
+            avg_deceptive_actions_over_scenarios.append(sum(avg_deceptive_actions_for_prior) / len(scenarios))
+        plt.plot(prior_probs, avg_deceptive_actions_over_scenarios, label=f'N={n}')
+
+    plt.title("Probability of Deceptive Action for T=3 Time Steps")
+    plt.xlabel("Prior Probability of Attacker Type 1")
+    plt.ylabel("Probability of Deceptive Action")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
