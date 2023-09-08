@@ -7,8 +7,8 @@ class SecurityGame:
         
         self.num_targets = num_targets
         self.k_resources = k_resources
-        self.history = []  # To store the history of attacks
-        self.belief_type1 = 0.5  # Initial belief that the attacker is of type 1
+        self.history = []  
+        self.belief_type1 = 0.5  
         self.rewards = [random.uniform(1, 10) for _ in range(num_targets)]
         self.penalties = [random.uniform(-10, -1) for _ in range(num_targets)]
         self.file = file
@@ -63,10 +63,15 @@ class SecurityGame:
         self.belief_type1 = belief_type1
         deceptive_actions = 0
         for _ in range(2):  # Time step of 2
-            defended_targets = self.defender_strategy()
-            self.history.append(defended_targets)  # Storing defended targets in history
+            # 1. Attacker chooses a target to attack
             target_attacked = self.simulate_attack(scenario)
+            
+            # 2. Defender then chooses targets to defend based on the attacker's choice
+            defended_targets = self.defender_strategy()
+            
+            # 3. Update beliefs and history
             self.update_beliefs(target_attacked)
+            self.history.append(defended_targets)  # Storing defended targets in history
             
             if target_attacked in defended_targets:
                 self.defender_utilities.append(self.rewards[target_attacked])
@@ -78,6 +83,7 @@ class SecurityGame:
             if target_attacked not in defended_targets:
                 deceptive_actions += 1
         return deceptive_actions / 2
+
 
     def run_experiment(self, scenario, belief_type1, instances=220):
         total_deceptive_actions = sum([self.run_single_instance(scenario, belief_type1) for _ in range(instances)])
